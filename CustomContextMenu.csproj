@@ -71,6 +71,7 @@
     <Reference Include="SkyFrost.Base">
       <HintPath>$(GamePath)Resonite_Data\Managed\SkyFrost.Base.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CustomContextMenu.cs" />
