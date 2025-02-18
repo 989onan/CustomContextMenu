@@ -48,7 +48,7 @@ namespace CustomContextMenu
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_template", out Slot TemplateSlot);
 
-
+                
                 if (TemplateSlot is null)
                 {
                     Msg("TemplateSlot is null");
@@ -59,33 +59,50 @@ namespace CustomContextMenu
                 Button Button = DuplicateTemplate.FindChild("CustomContextMenu_button").GetComponent<Button>();
                 FrooxEngine.UIX.Image ButtonImage = DuplicateTemplate.FindChild("CustomContextMenu_image").GetComponent<FrooxEngine.UIX.Image>();
                 FrooxEngine.UIX.Text ButtonText = DuplicateTemplate.FindChild("CustomContextMenu_text").GetComponent<FrooxEngine.UIX.Text>();
-
+                Msg("1");
                 if (PlacerSlot is null || Button is null || ButtonImage is null)
                 {
                     DuplicateTemplate.Destroy();
                     Msg("PlacerSlot, Button, or ButtonImage is null");
                     return true;
                 }
-
+                Msg("2");
                 ArcData arcData = default(ArcData);
+                Msg("3");
                 arcData.arc = __instance.Current.AttachComponent<OutlinedArc>(true, null);
+                Msg("4");
                 arcData.arcLayout = __instance.Current.AttachComponent<ArcSegmentLayout>(true, null);
+                Msg("5");
                 if (setupButton)
                 {
+                    Msg("6");
                     arcData.button = Button;
+                    Msg("7");
                     UIBuilder.SetupButtonColor(arcData.button, arcData.arc);
                 }
+                Msg("9");
                 __instance.Nest();
+                Msg("10");
                 arcData.image = ButtonImage;
+                Msg("11");
                 arcData.text = ButtonText;
+                Msg("12");
 
-                arcData.arcLayout.Nested.Target = arcData.image.RectTransform;
+                //arcData.arcLayout.Nested.Target = arcData.image.RectTransform;
                 if ((label) != null)
                 {
+                    Msg("13");
                     arcData.text.LocaleContent = label;
+                    Msg("14");
                     arcData.arcLayout.Label.Target = arcData.text;
                 }
+                else
+                {
+                    Msg("Label is null");
+                }
+                Msg("15");
                 __instance.NestOut();
+                Msg("16");
                 __result = arcData;
 
                 Msg("Function has run");
