@@ -31,16 +31,15 @@ namespace CustomContextMenu
             Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
             MethodInfo contextMenuPatch = AccessTools.Method(typeof(UIBuilder), "Arc");
             ContextHarmony.Patch(contextMenuPatch, prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
-            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "Close"), prefix: AccessTools.Method(typeof(PatchMenu), "Close"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "StartNewMenu"), prefix: AccessTools.Method(typeof(PatchMenu), "StartNewMenu"));
 
             ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
         public class PatchMenu
         {
-            public static bool Close(ContextMenu __instance)
+            public static bool StartNewMenu(ContextMenu __instance)
             {
-                //this._state.Value = ContextMenu.State.Closed;
                 Slot ArkSlot = __instance.Slot;
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
 
