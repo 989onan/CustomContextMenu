@@ -2,15 +2,20 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
 using Elements.Assets;
 using Elements.Core;
 using FrooxEngine;
+using FrooxEngine.UIX;
 using HarmonyLib;
 using Leap;
 using ResoniteModLoader;
 
+#nullable enable
 namespace CustomContextMenu
 {
     public class CustomContextMenu : ResoniteMod
@@ -23,88 +28,115 @@ namespace CustomContextMenu
 
         public override void OnEngineInit()
         {
-            new Harmony("net.989onan.CustomContextMenu").PatchAll();
+            Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
+            MethodInfo contextMenuPatch = AccessTools.Method(typeof(UIBuilder), "Arc");
+            ContextHarmony.Patch(contextMenuPatch, prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "Close"), prefix: AccessTools.Method(typeof(PatchMenu), "Close"));
+
+            ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
-
-
-        //[HarmonyPatch(typeof(UniversalImporter), "Import", typeof(AssetClass), typeof(IEnumerable<string>),
-        //typeof(World), typeof(float3), typeof(floatQ), typeof(bool))]
-        // private ContextMenuItem AddItem(in LocaleString label, IAssetProvider<ITexture2D>? texture, Uri? icon, IAssetProvider<Sprite>? sprite, in colorX? color)
-
-        [HarmonyPatch( 
-            typeof(ContextMenu), "AddItem", typeof(LocaleString), 
-typeof(IAssetProvider<ITexture2D>?), 
-typeof(Uri?), 
-typeof(IAssetProvider<Sprite>?), 
-typeof(colorX?))]
-        public partial class PatchMenu
+        public class PatchMenu
         {
+            public static bool Close(ContextMenu __instance)
+            {
+                //this._state.Value = ContextMenu.State.Closed;
+                Slot ArkSlot = __instance.Slot;
+                ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
 
+                if (PlacerSlot is not null)
+                {
+                    PlacerSlot.DestroyChildren();
+                }
+                return true;
+            }
 
+            private static void DebugMsg(string msg)
+            {
+                #if DEBUG
+                    Msg(msg);
+                #endif
+            }
 
-            public static bool Prefix(ContextMenu __instance, in LocaleString label, IAssetProvider<ITexture2D>? texture, Uri? icon, IAssetProvider<Sprite>? sprite, in colorX? color)
-		{
-  DynamicVariableSpace space = __instance.ActiveUser.Slot.FindNearestCompnent<DynamicVariableSpace>(o => o.Spacename.Value == "CustomContextMenu") if(space == null){return true}
-			__instance.CheckOwner();
-			__instance.CheckBuildingUI();
-			ArcData arcData = ((label.content == null) ? _ui.Arc((LocaleString)"") : _ui.Arc(in label));
-			if (sprite == null)
-			{
-				if (texture != null)
-				{
-					SpriteProvider spriteProvider = arcData.image.Slot.AttachComponent<SpriteProvider>();
-					spriteProvider.Texture.Target = texture;
-					sprite = spriteProvider;
-				}
-				else
-				{
-					SpriteProvider spriteProvider2 = arcData.image.Slot.AttachSprite(icon, uncompressed: false, evenNull: true);
-					texture = spriteProvider2.Texture.Target;
-					sprite = spriteProvider2;
-				}
-			}
-			arcData.arc.InnerRadiusRatio.Value = RadiusRatio;
-			arcData.arcLayout.LabelSize.Value = LabelSize;
-			arcData.arcLayout.NestedSizeRatio.Value = 0.65f;
-			arcData.arc.OutlineThickness.Value = 3f;
-			arcData.arc.RoundedCornerRadius.Value = 16f;
-			arcData.arc.Material.Target = _arcMaterial.Target;
-			arcData.text.Material.Target = _fontMaterial.Target;
-			arcData.text.Color.Value = RadiantUI_Constants.TEXT_COLOR;
-			arcData.text.Size.Value = 50f;
-			arcData.text.AutoSizeMax.Value = 50f;
-			arcData.image.Sprite.Target = sprite;
-			arcData.image.Material.Target = _spriteMaterial.Target;
-			ContextMenuItem contextMenuItem = arcData.button.Slot.AttachComponent<ContextMenuItem>();
-			arcData.button.HoverVibrate.Value = VibratePreset.Medium;
-			arcData.button.PressVibrate.Value = VibratePreset.Long;
-			InteractionElement.ColorDriver colorDriver = arcData.button.ColorDrivers.Add();
-			colorDriver.ColorDrive.Target = arcData.image.Tint;
-			colorDriver.NormalColor.Value = colorX.White;
-			colorDriver.HighlightColor.Value = colorX.White;
-			colorDriver.PressColor.Value = colorX.White;
-			colorDriver.DisabledColor.Value = colorX.White.SetA(0.53f);
-			contextMenuItem.Initialize(this, arcData.arc, arcData.button);
-			contextMenuItem.Icon.Target = arcData.image;
-			contextMenuItem.Sprite.Target = sprite as SpriteProvider;
-			contextMenuItem.Label.Target = arcData.text.Content;
-			if (color.HasValue)
-			{
-				contextMenuItem.Color.Value = color.Value;
-			}
-			else
-			{
-				BitmapAssetMetadata bitmapAssetMetadata = contextMenuItem.Slot.AttachComponent<BitmapAssetMetadata>();
-				bitmapAssetMetadata.Asset.Target = texture as IAssetProvider<Texture2D>;
-				contextMenuItem.Color.DriveFrom(bitmapAssetMetadata.AverageVisibleHSV);
-			}
-			contextMenuItem.UpdateColor();
-			return contextMenuItem;
-            
-                
+            public static bool Prefix(ref ArcData __result, UIBuilder __instance, LocaleString label, bool setupButton)
+            {
+                /*
+                LocaleString label = (LocaleString)__args[0];
+                bool setupButton = (bool)__args[1]
+                */
+
+                Slot ArkSlot = __instance.Next("Arc");
+
+                ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
+                ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_template", out Slot TemplateSlot);
+
+                if (TemplateSlot is null)
+                {
+                    Msg("TemplateSlot is null");
+                    return true;
+                }
+                DebugMsg("-4");
+                Slot DuplicateTemplate = TemplateSlot.Duplicate();
+                DebugMsg("-3");
+                DuplicateTemplate.SetParent(PlacerSlot);
+                DebugMsg("-2");
+                Button Button = DuplicateTemplate.Name == "CustomContextMenu_button" ? DuplicateTemplate.GetComponent<Button>() : DuplicateTemplate.FindChild("CustomContextMenu_button").GetComponent<Button>();
+                DebugMsg("-1");
+                FrooxEngine.UIX.Image ButtonImage = DuplicateTemplate.FindChild("CustomContextMenu_image").GetComponent<FrooxEngine.UIX.Image>();
+                DebugMsg("0");
+                FrooxEngine.UIX.Text ButtonText = DuplicateTemplate.FindChild("CustomContextMenu_text").GetComponent<FrooxEngine.UIX.Text>();
+                DebugMsg("1");
+                if (PlacerSlot is null || Button is null || ButtonImage is null)
+                {
+                    DuplicateTemplate.Destroy();
+                    Msg("PlacerSlot, Button, or ButtonImage is null");
+                    return true;
+                }
+                DebugMsg("2");
+                ArcData arcData = default(ArcData);
+                DebugMsg("3");
+                arcData.arc = __instance.Current.AttachComponent<OutlinedArc>(true, null);
+                DebugMsg("4");
+                arcData.arcLayout = __instance.Current.AttachComponent<ArcSegmentLayout>(true, null);
+                DebugMsg("5");
+                if (setupButton)
+                {
+                    DebugMsg("6");
+                    arcData.button = Button;
+                    DebugMsg("7");
+                    UIBuilder.SetupButtonColor(arcData.button, arcData.arc);
+                }
+                DebugMsg("9");
+                __instance.Nest();
+                DebugMsg("10");
+                arcData.image = ButtonImage;
+                DebugMsg("11");
+                arcData.text = ButtonText;
+                DebugMsg("12");
+
+                //arcData.arcLayout.Nested.Target = arcData.image.RectTransform;
+                if ((label) != null)
+                {
+                    DebugMsg("13");
+                    arcData.text.LocaleContent = label;
+                    DebugMsg("14");
+                    arcData.arcLayout.Label.Target = arcData.text;
+                }
+                else
+                {
+                    Msg("Label is null");
+                }
+                DebugMsg("15");
+                __instance.NestOut();
+                DebugMsg("16");
+                __result = arcData;
+
+                Msg("Function has run");
+
+                ArkSlot.ActiveSelf = false;
                 return false;
             }
         }
+
     }
 }
