@@ -28,16 +28,20 @@ namespace CustomContextMenu
         public override void OnEngineInit()
         {
             Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
-            MethodInfo contextMenuPatch = AccessTools.Method(typeof(UIBuilder), "Arc", new Type[] { typeof(LocaleString), typeof(bool) });
-            ContextHarmony.Patch(contextMenuPatch, postfix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
+            MethodInfo contextMenuPatch = AccessTools.Method(typeof(UIBuilder), "Arc");
+            ContextHarmony.Patch(contextMenuPatch, prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
 
             ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
-        public partial class PatchMenu
+        public class PatchMenu
         {
-            public static bool Prefix(ref ArcData __result, UIBuilder __instance, ref LocaleString ___label, bool setupButton)
+            public static bool Prefix(ref ArcData __result, UIBuilder __instance, LocaleString label, bool setupButton)
             {
+                /*
+                LocaleString label = (LocaleString)__args[0];
+                bool setupButton = (bool)__args[1]
+                */
 
                 Slot ArkSlot = __instance.Next("Arc");
 
@@ -76,9 +80,9 @@ namespace CustomContextMenu
                 arcData.text = ButtonText;
 
                 arcData.arcLayout.Nested.Target = arcData.image.RectTransform;
-                if ((___label) != null)
+                if ((label) != null)
                 {
-                    arcData.text.LocaleContent = ___label;
+                    arcData.text.LocaleContent = label;
                     arcData.arcLayout.Label.Target = arcData.text;
                 }
                 __instance.NestOut();
