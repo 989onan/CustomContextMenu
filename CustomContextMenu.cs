@@ -51,6 +51,13 @@ namespace CustomContextMenu
                 return true;
             }
 
+            private static void DebugMsg(string msg)
+            {
+                #if DEBUG
+                    Msg(msg);
+                #endif
+            }
+
             public static bool Prefix(ref ArcData __result, UIBuilder __instance, LocaleString label, bool setupButton)
             {
                 /*
@@ -68,60 +75,60 @@ namespace CustomContextMenu
                     Msg("TemplateSlot is null");
                     return true;
                 }
-                Msg("-4");
+                DebugMsg("-4");
                 Slot DuplicateTemplate = TemplateSlot.Duplicate();
-                Msg("-3");
+                DebugMsg("-3");
                 DuplicateTemplate.SetParent(PlacerSlot);
-                Msg("-2");
+                DebugMsg("-2");
                 Button Button = DuplicateTemplate.Name == "CustomContextMenu_button" ? DuplicateTemplate.GetComponent<Button>() : DuplicateTemplate.FindChild("CustomContextMenu_button").GetComponent<Button>();
-                Msg("-1");
+                DebugMsg("-1");
                 FrooxEngine.UIX.Image ButtonImage = DuplicateTemplate.FindChild("CustomContextMenu_image").GetComponent<FrooxEngine.UIX.Image>();
-                Msg("0");
+                DebugMsg("0");
                 FrooxEngine.UIX.Text ButtonText = DuplicateTemplate.FindChild("CustomContextMenu_text").GetComponent<FrooxEngine.UIX.Text>();
-                Msg("1");
+                DebugMsg("1");
                 if (PlacerSlot is null || Button is null || ButtonImage is null)
                 {
                     DuplicateTemplate.Destroy();
                     Msg("PlacerSlot, Button, or ButtonImage is null");
                     return true;
                 }
-                Msg("2");
+                DebugMsg("2");
                 ArcData arcData = default(ArcData);
-                Msg("3");
+                DebugMsg("3");
                 arcData.arc = __instance.Current.AttachComponent<OutlinedArc>(true, null);
-                Msg("4");
+                DebugMsg("4");
                 arcData.arcLayout = __instance.Current.AttachComponent<ArcSegmentLayout>(true, null);
-                Msg("5");
+                DebugMsg("5");
                 if (setupButton)
                 {
-                    Msg("6");
+                    DebugMsg("6");
                     arcData.button = Button;
-                    Msg("7");
+                    DebugMsg("7");
                     UIBuilder.SetupButtonColor(arcData.button, arcData.arc);
                 }
-                Msg("9");
+                DebugMsg("9");
                 __instance.Nest();
-                Msg("10");
+                DebugMsg("10");
                 arcData.image = ButtonImage;
-                Msg("11");
+                DebugMsg("11");
                 arcData.text = ButtonText;
-                Msg("12");
+                DebugMsg("12");
 
                 //arcData.arcLayout.Nested.Target = arcData.image.RectTransform;
                 if ((label) != null)
                 {
-                    Msg("13");
+                    DebugMsg("13");
                     arcData.text.LocaleContent = label;
-                    Msg("14");
+                    DebugMsg("14");
                     arcData.arcLayout.Label.Target = arcData.text;
                 }
                 else
                 {
                     Msg("Label is null");
                 }
-                Msg("15");
+                DebugMsg("15");
                 __instance.NestOut();
-                Msg("16");
+                DebugMsg("16");
                 __result = arcData;
 
                 Msg("Function has run");
