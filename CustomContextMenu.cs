@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,12 +31,26 @@ namespace CustomContextMenu
             Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
             MethodInfo contextMenuPatch = AccessTools.Method(typeof(UIBuilder), "Arc");
             ContextHarmony.Patch(contextMenuPatch, prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "Close"), prefix: AccessTools.Method(typeof(PatchMenu), "Close"));
 
             ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
         public class PatchMenu
         {
+            public static bool Close(ContextMenu __instance)
+            {
+                //this._state.Value = ContextMenu.State.Closed;
+                Slot ArkSlot = __instance.Slot;
+                ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
+
+                if (PlacerSlot is not null)
+                {
+                    PlacerSlot.DestroyChildren();
+                }
+                return true;
+            }
+
             public static bool Prefix(ref ArcData __result, UIBuilder __instance, LocaleString label, bool setupButton)
             {
                 /*
@@ -48,16 +63,20 @@ namespace CustomContextMenu
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_template", out Slot TemplateSlot);
 
-                
                 if (TemplateSlot is null)
                 {
                     Msg("TemplateSlot is null");
                     return true;
                 }
+                Msg("-4");
                 Slot DuplicateTemplate = TemplateSlot.Duplicate();
+                Msg("-3");
                 DuplicateTemplate.SetParent(PlacerSlot);
-                Button Button = DuplicateTemplate.FindChild("CustomContextMenu_button").GetComponent<Button>();
+                Msg("-2");
+                Button Button = DuplicateTemplate.Name == "CustomContextMenu_button" ? DuplicateTemplate.GetComponent<Button>() : DuplicateTemplate.FindChild("CustomContextMenu_button").GetComponent<Button>();
+                Msg("-1");
                 FrooxEngine.UIX.Image ButtonImage = DuplicateTemplate.FindChild("CustomContextMenu_image").GetComponent<FrooxEngine.UIX.Image>();
+                Msg("0");
                 FrooxEngine.UIX.Text ButtonText = DuplicateTemplate.FindChild("CustomContextMenu_text").GetComponent<FrooxEngine.UIX.Text>();
                 Msg("1");
                 if (PlacerSlot is null || Button is null || ButtonImage is null)
