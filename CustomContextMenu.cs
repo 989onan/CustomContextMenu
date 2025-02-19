@@ -34,7 +34,7 @@ namespace CustomContextMenu
             Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
             ContextHarmony.Patch(AccessTools.Method(typeof(UIBuilder), "Arc"),          prefix: AccessTools.Method(typeof(PatchMenu), "CreateItem"));
             ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "Close"),      prefix: AccessTools.Method(typeof(PatchMenu), "Close"));
-            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "OpenMenu"),   prefix: AccessTools.Method(typeof(PatchMenu), "Open"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "OpenMenu"),   prefix: AccessTools.Method(typeof(PatchMenu), "Open"), postfix: AccessTools.Method(typeof(PatchMenu), "OpenPost"));
             ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
@@ -46,6 +46,46 @@ namespace CustomContextMenu
 
         public class PatchMenu
         {
+
+            /*public static void ColliderEnabled(ContextMenu __instance)
+            {
+                __instance.ColliderEnabled. = false;
+            }
+
+
+            //ooo boy! - @989onan
+            public static IEnumerable<CodeInstruction> patchOnChanged(IEnumerable<CodeInstruction> instructions)
+            {
+                List<CodeInstruction> instructionsList = instructions.ToList();
+
+
+                //transpile out the collider enabled field with our own function
+                int codepos = instructionsList.IndexOf(instructionsList.Find(x => x.operand.ToString().Contains("_colliderEnabled")));
+
+
+                int start = codepos - 1;
+
+                int end = -1;
+
+                int iter = start;
+                while (!(instructionsList[iter].operand.ToString().Contains("set_Value") && instructionsList[iter].opcode == OpCodes.Callvirt))
+                {
+                    iter++;
+                }
+                end = iter;
+
+                List<CodeInstruction> instructions1 = new List<CodeInstruction>();
+
+                for (int i = start; i < end+1; i++)
+                {
+                    instructionsList[i].opcode = OpCodes.Nop;// (instructionsList[i]);
+                }
+                instructionsList[start] = new CodeInstruction(OpCodes.Ldarg_0, null);
+                instructionsList[start+1] = new CodeInstruction(OpCodes.Call, AccessTools.Method(;
+
+
+                return instructionsList;
+            }*/
             public static bool Close(ContextMenu __instance)
             {
                 //this._state.Value = ContextMenu.State.Closed;
@@ -55,10 +95,29 @@ namespace CustomContextMenu
                 {
                     PlacerSlot.DestroyChildren();
                 }
+                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
+                {
+                    RootContextMenuObj.ActiveSelf = false;
+                }
+
                 return true;
             }
 
-            public static void OpenMenu(ContextMenu __instance)
+            public static void OpenPost(ContextMenu __instance)
+            {
+                Slot ArkSlot = __instance.Slot;
+
+                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
+                {
+                    __instance.Slot.ActiveSelf = false;
+                }
+                else
+                {
+                    __instance.Slot.ActiveSelf = true;
+                }
+            }
+
+            public static bool Open(ContextMenu __instance)
             {
                 Slot ArkSlot = __instance.Slot;
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
@@ -66,6 +125,14 @@ namespace CustomContextMenu
                 {
                     PlacerSlot.DestroyChildren();
                 }
+
+                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
+                {
+                    RootContextMenuObj.ActiveSelf = true;
+                    RootContextMenuObj.CopyTransform(__instance.Slot);
+                }
+
+                return true;
             }
 
             private static void DebugMsg(string msg)
