@@ -18,6 +18,7 @@
     <GamePath Condition="Exists('E:\Programs\Steam\steamapps\common\Resonite')">E:\Programs\Steam\steamapps\common\Resonite\</GamePath>
     <GamePath Condition="Exists('/mnt/LocalDisk/SteamLibrary/steamapps/common/Resonite/')">\mnt\LocalDisk\SteamLibrary\steamapps\common\Resonite\</GamePath>
     <GamePath Condition="Exists('D:/SteamLibrary/steamapps/common/Resonite/')">D:\SteamLibrary\steamapps\common\Resonite\</GamePath>
+    <ProjectGuid>{0A214F6D-07FD-49F5-B19A-7463485B685F}</ProjectGuid>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -37,6 +38,18 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'release dll|AnyCPU'">
+    <OutputPath>bin\release dll\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <LangVersion>10</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject />
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="0Harmony">
       <HintPath>$(GamePath)rml_libs\0Harmony.dll</HintPath>
@@ -44,6 +57,7 @@
     <Reference Include="Assimp">
       <HintPath>$(GamePath)Resonite_Data\Managed\AssimpNet.dll</HintPath>
     </Reference>
+    <Reference Include="System" />
     <Reference Include="System.Memory">
       <HintPath>$(GamePath)Resonite_Data\Managed\System.Memory.dll</HintPath>
     </Reference>
