@@ -29,8 +29,7 @@ namespace CustomContextMenu
         public override void OnEngineInit()
         {
             Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
-            MethodInfo contextMenuPatch = AccessTools.Method(typeof(UIBuilder), "Arc");
-            ContextHarmony.Patch(contextMenuPatch, prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(UIBuilder), "Arc"), prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
             ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "StartNewMenu"), prefix: AccessTools.Method(typeof(PatchMenu), "StartNewMenu"));
 
             ContextHarmony.PatchAll();
@@ -105,7 +104,7 @@ namespace CustomContextMenu
                 }
                 else
                 {
-                    Msg("Label is null");
+                    DebugMsg("Label is null");
                 }
                 __instance.NestOut();
                 __result = arcData;
