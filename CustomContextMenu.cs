@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices.ComTypes;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Elements.Assets;
@@ -14,6 +16,7 @@ using FrooxEngine.UIX;
 using HarmonyLib;
 using Leap;
 using ResoniteModLoader;
+using uDesktopDuplication;
 
 #nullable enable
 namespace CustomContextMenu
@@ -24,7 +27,7 @@ namespace CustomContextMenu
         public override string Author => "989onan";
         public override string Version => "1.0.0";
 
-        internal static ModConfiguration Config;
+        internal static ModConfiguration? Config;
 
         public override void OnEngineInit()
         {
@@ -35,17 +38,27 @@ namespace CustomContextMenu
             ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
+
+        //[HarmonyPatch(typeof(UniversalImporter), "Import", typeof(AssetClass), typeof(IEnumerable<string>),
+        //typeof(World), typeof(float3), typeof(floatQ), typeof(bool))]
+
+
+
         public class PatchMenu
         {
             public static bool StartNewMenu(ContextMenu __instance)
             {
                 Slot ArkSlot = __instance.Slot;
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
-
                 if (PlacerSlot is not null)
                 {
                     PlacerSlot.DestroyChildren();
                 }
+                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
+                {
+                    RootContextMenuObj.ActiveSelf = false;
+                }
+
                 return true;
             }
 
@@ -56,7 +69,7 @@ namespace CustomContextMenu
                 #endif
             }
 
-            public static bool Prefix(ref ArcData __result, UIBuilder __instance, LocaleString label, bool setupButton)
+            public static bool CreateItem(ref ArcData __result, UIBuilder __instance, LocaleString label, bool setupButton)
             {
                 /*
                 LocaleString label = (LocaleString)__args[0];
@@ -115,6 +128,5 @@ namespace CustomContextMenu
                 return false;
             }
         }
-
     }
 }
