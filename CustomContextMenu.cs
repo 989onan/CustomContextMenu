@@ -32,9 +32,9 @@ namespace CustomContextMenu
         public override void OnEngineInit()
         {
             Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
-            ContextHarmony.Patch(AccessTools.Method(typeof(UIBuilder), "Arc"),          prefix: AccessTools.Method(typeof(PatchMenu), "CreateItem"));
-            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "Close"),      prefix: AccessTools.Method(typeof(PatchMenu), "Close"));
-            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "OpenMenu"),   prefix: AccessTools.Method(typeof(PatchMenu), "Open"), postfix: AccessTools.Method(typeof(PatchMenu), "OpenPost"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(UIBuilder), "Arc"), prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "StartNewMenu"), prefix: AccessTools.Method(typeof(PatchMenu), "StartNewMenu"));
+
             ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
@@ -46,49 +46,8 @@ namespace CustomContextMenu
 
         public class PatchMenu
         {
-
-            /*public static void ColliderEnabled(ContextMenu __instance)
+            public static bool StartNewMenu(ContextMenu __instance)
             {
-                __instance.ColliderEnabled. = false;
-            }
-
-
-            //ooo boy! - @989onan
-            public static IEnumerable<CodeInstruction> patchOnChanged(IEnumerable<CodeInstruction> instructions)
-            {
-                List<CodeInstruction> instructionsList = instructions.ToList();
-
-
-                //transpile out the collider enabled field with our own function
-                int codepos = instructionsList.IndexOf(instructionsList.Find(x => x.operand.ToString().Contains("_colliderEnabled")));
-
-
-                int start = codepos - 1;
-
-                int end = -1;
-
-                int iter = start;
-                while (!(instructionsList[iter].operand.ToString().Contains("set_Value") && instructionsList[iter].opcode == OpCodes.Callvirt))
-                {
-                    iter++;
-                }
-                end = iter;
-
-                List<CodeInstruction> instructions1 = new List<CodeInstruction>();
-
-                for (int i = start; i < end+1; i++)
-                {
-                    instructionsList[i].opcode = OpCodes.Nop;// (instructionsList[i]);
-                }
-                instructionsList[start] = new CodeInstruction(OpCodes.Ldarg_0, null);
-                instructionsList[start+1] = new CodeInstruction(OpCodes.Call, AccessTools.Method(;
-
-
-                return instructionsList;
-            }*/
-            public static bool Close(ContextMenu __instance)
-            {
-                //this._state.Value = ContextMenu.State.Closed;
                 Slot ArkSlot = __instance.Slot;
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
                 if (PlacerSlot is not null)
@@ -98,38 +57,6 @@ namespace CustomContextMenu
                 if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
                 {
                     RootContextMenuObj.ActiveSelf = false;
-                }
-
-                return true;
-            }
-
-            public static void OpenPost(ContextMenu __instance)
-            {
-                Slot ArkSlot = __instance.Slot;
-
-                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
-                {
-                    __instance.Slot.ActiveSelf = false;
-                }
-                else
-                {
-                    __instance.Slot.ActiveSelf = true;
-                }
-            }
-
-            public static bool Open(ContextMenu __instance)
-            {
-                Slot ArkSlot = __instance.Slot;
-                ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
-                if (PlacerSlot is not null)
-                {
-                    PlacerSlot.DestroyChildren();
-                }
-
-                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
-                {
-                    RootContextMenuObj.ActiveSelf = true;
-                    RootContextMenuObj.CopyTransform(__instance.Slot);
                 }
 
                 return true;
@@ -156,66 +83,46 @@ namespace CustomContextMenu
 
                 if (TemplateSlot is null)
                 {
-                    Msg("TemplateSlot is null");
+                    DebugMsg("TemplateSlot is null");
                     return true;
                 }
-                DebugMsg("-4");
                 Slot DuplicateTemplate = TemplateSlot.Duplicate();
-                DebugMsg("-3");
                 DuplicateTemplate.SetParent(PlacerSlot);
-                DebugMsg("-2");
                 Button Button = DuplicateTemplate.Name == "CustomContextMenu_button" ? DuplicateTemplate.GetComponent<Button>() : DuplicateTemplate.FindChild("CustomContextMenu_button").GetComponent<Button>();
-                DebugMsg("-1");
                 FrooxEngine.UIX.Image ButtonImage = DuplicateTemplate.FindChild("CustomContextMenu_image").GetComponent<FrooxEngine.UIX.Image>();
-                DebugMsg("0");
                 FrooxEngine.UIX.Text ButtonText = DuplicateTemplate.FindChild("CustomContextMenu_text").GetComponent<FrooxEngine.UIX.Text>();
-                DebugMsg("1");
                 if (PlacerSlot is null || Button is null || ButtonImage is null)
                 {
                     DuplicateTemplate.Destroy();
-                    Msg("PlacerSlot, Button, or ButtonImage is null");
+                    DebugMsg("PlacerSlot, Button, or ButtonImage is null");
                     return true;
                 }
-                DebugMsg("2");
                 ArcData arcData = default(ArcData);
-                DebugMsg("3");
                 arcData.arc = __instance.Current.AttachComponent<OutlinedArc>(true, null);
-                DebugMsg("4");
                 arcData.arcLayout = __instance.Current.AttachComponent<ArcSegmentLayout>(true, null);
-                DebugMsg("5");
                 if (setupButton)
                 {
-                    DebugMsg("6");
                     arcData.button = Button;
-                    DebugMsg("7");
                     UIBuilder.SetupButtonColor(arcData.button, arcData.arc);
                 }
-                DebugMsg("9");
                 __instance.Nest();
-                DebugMsg("10");
                 arcData.image = ButtonImage;
-                DebugMsg("11");
                 arcData.text = ButtonText;
-                DebugMsg("12");
 
                 //arcData.arcLayout.Nested.Target = arcData.image.RectTransform;
                 if ((label) != null)
                 {
-                    DebugMsg("13");
                     arcData.text.LocaleContent = label;
-                    DebugMsg("14");
                     arcData.arcLayout.Label.Target = arcData.text;
                 }
                 else
                 {
-                    Msg("Label is null");
+                    DebugMsg("Label is null");
                 }
-                DebugMsg("15");
                 __instance.NestOut();
-                DebugMsg("16");
                 __result = arcData;
 
-                Msg("Function has run");
+                DebugMsg("Patch \'Arc\' has run successfully");
 
                 ArkSlot.ActiveSelf = false;
                 return false;
