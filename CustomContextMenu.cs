@@ -68,16 +68,16 @@ namespace CustomContextMenu
                     FrooxEngine.Engine.Current.WorldManager.FocusedWorld.RunInUpdates(2, () =>
                     {
                         RootContextMenuObj.ActiveSelf = false;
-
+                        is_unfocusing = false;
                     });
-
+                    
 
                 }
 
                 return true;
             }
 
-
+            public static bool is_unfocusing = false;
             public static bool TouchEvent(Canvas __instance, TouchEventInfo eventInfo, List<Predicate<IUIInteractable>> filters)
             {
                 Slot ArkSlot = __instance.Slot;
@@ -89,7 +89,20 @@ namespace CustomContextMenu
                 {
                     if (eventInfo.hover == EventState.End && RootContextMenuObj.GetComponentInChildren<Canvas>() == __instance)
                     {
-                        ArkSlot.ActiveUser.Root.Slot.GetComponentInChildren<ContextMenu>().Close();
+                        if (!is_unfocusing)
+                        {
+                            is_unfocusing = true;
+                            FrooxEngine.Engine.Current.WorldManager.FocusedWorld.RunInSeconds(.5f, () =>
+                            {
+                                is_unfocusing = false;
+                            });
+                        }
+                        else
+                        {
+                            is_unfocusing = false;
+                            ArkSlot.ActiveUser.Root.Slot.GetComponentInChildren<ContextMenu>().Close();
+                        }
+                        
 
                     }
                 }
