@@ -32,9 +32,10 @@ namespace CustomContextMenu
         public override void OnEngineInit()
         {
             Harmony ContextHarmony = new Harmony("net.989onan.CustomContextMenu");
-            ContextHarmony.Patch(AccessTools.Method(typeof(UIBuilder), "Arc"), prefix: AccessTools.Method(typeof(PatchMenu), "Prefix"));
-            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "StartNewMenu"), prefix: AccessTools.Method(typeof(PatchMenu), "StartNewMenu"));
-
+            ContextHarmony.Patch(AccessTools.Method(typeof(UIBuilder), "Arc"), prefix: AccessTools.Method(typeof(PatchMenu), "CreateItem"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "Close"), prefix: AccessTools.Method(typeof(PatchMenu), "Close"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(ContextMenu), "OpenMenu"), prefix: AccessTools.Method(typeof(PatchMenu), "Open"), postfix: AccessTools.Method(typeof(PatchMenu), "OpenPost"));
+            ContextHarmony.Patch(AccessTools.Method(typeof(Canvas), "ProcessTouchEvent"), prefix: AccessTools.Method(typeof(PatchMenu), "TouchEvent"));
             ContextHarmony.PatchAll();
             Config = GetConfiguration();
         }
@@ -46,9 +47,14 @@ namespace CustomContextMenu
 
         public class PatchMenu
         {
-            public static bool StartNewMenu(ContextMenu __instance)
+            public static bool Close(ContextMenu __instance)
             {
+                //this._state.Value = ContextMenu.State.Closed;
                 Slot ArkSlot = __instance.Slot;
+                if (ArkSlot.ActiveUser != __instance.LocalUser)
+                {
+                    return true;
+                }
                 ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
                 if (PlacerSlot is not null)
                 {
@@ -56,7 +62,79 @@ namespace CustomContextMenu
                 }
                 if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
                 {
-                    RootContextMenuObj.ActiveSelf = false;
+
+                    __instance.Slot.ActiveSelf = false;
+
+                    FrooxEngine.Engine.Current.WorldManager.FocusedWorld.RunInUpdates(2, () =>
+                    {
+                        RootContextMenuObj.ActiveSelf = false;
+
+                    });
+
+
+                }
+
+                return true;
+            }
+
+
+            public static bool TouchEvent(Canvas __instance, TouchEventInfo eventInfo, List<Predicate<IUIInteractable>> filters)
+            {
+                Slot ArkSlot = __instance.Slot;
+                if (ArkSlot.ActiveUser != __instance.LocalUser)
+                {
+                    return true;
+                }
+                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
+                {
+                    if (eventInfo.hover == EventState.End && RootContextMenuObj.GetComponentInChildren<Canvas>() == __instance)
+                    {
+                        ArkSlot.ActiveUser.Root.Slot.GetComponentInChildren<ContextMenu>().Close();
+
+                    }
+                }
+
+                return true;
+            }
+
+            public static void OpenPost(ContextMenu __instance)
+            {
+                Slot ArkSlot = __instance.Slot;
+                if (ArkSlot.ActiveUser != __instance.LocalUser)
+                {
+                    return;
+                }
+                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
+                {
+                    __instance.Slot.ActiveSelf = false;
+                }
+                else
+                {
+                    __instance.Slot.ActiveSelf = true;
+                }
+            }
+
+            public static bool Open(ContextMenu __instance)
+            {
+                Slot ArkSlot = __instance.Slot;
+
+                if (ArkSlot.ActiveUser != __instance.LocalUser)
+                {
+                    return true;
+                }
+                ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_placer", out Slot PlacerSlot);
+                if (PlacerSlot is not null)
+                {
+                    PlacerSlot.DestroyChildren();
+                }
+
+                if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
+                {
+                    RootContextMenuObj.ActiveSelf = true;
+                    FrooxEngine.Engine.Current.WorldManager.FocusedWorld.RunInUpdates(2, () =>
+                    {
+                        RootContextMenuObj.CopyTransform(__instance.Slot);
+                    });
                 }
 
                 return true;
