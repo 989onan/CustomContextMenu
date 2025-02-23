@@ -87,24 +87,31 @@ namespace CustomContextMenu
                 }
                 if (ArkSlot.ActiveUser.Root.Slot.GetComponent<DynamicVariableSpace>(o => o.SpaceName.Value == "User").TryReadValue("CustomContextMenu_Root", out Slot RootContextMenuObj))
                 {
-                    if (eventInfo.hover == EventState.End && RootContextMenuObj.GetComponentInChildren<Canvas>() == __instance)
+                    if(RootContextMenuObj.GetComponentInChildren<Canvas>() == __instance)
                     {
-                        if (!is_unfocusing)
+                        if (eventInfo.hover == EventState.End)
                         {
-                            is_unfocusing = true;
-                            FrooxEngine.Engine.Current.WorldManager.FocusedWorld.RunInSeconds(.5f, () =>
+                            if (!is_unfocusing)
                             {
-                                is_unfocusing = false;
-                            });
+                                is_unfocusing = true;
+                                FrooxEngine.Engine.Current.WorldManager.FocusedWorld.RunInSeconds(.2f, () =>
+                                {
+                                    if (is_unfocusing)
+                                    {
+                                        ArkSlot.ActiveUser.Root.Slot.GetComponentInChildren<ContextMenu>().Close();
+                                    }
+                                    is_unfocusing = false;
+                                });
+                            }
+
+
                         }
-                        else
+                        if (eventInfo.hover == EventState.Begin)
                         {
                             is_unfocusing = false;
-                            ArkSlot.ActiveUser.Root.Slot.GetComponentInChildren<ContextMenu>().Close();
                         }
-                        
-
                     }
+                    
                 }
 
                 return true;
